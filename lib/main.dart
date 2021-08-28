@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_midi/flutter_midi.dart';
+import 'package:flutter/foundation.dart';
+import './pitch.dart';
 import './staff.dart';
 
 void main() {
@@ -48,16 +52,41 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
+  final midi = FlutterMidi();
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  Voicing voicing = Voicing(2, Pitch.from('A4'), Pitch.from('F#4'),
+      Pitch.from('A3'), Pitch.from('D3'));
+
+  @override
+  void initState() {
+    load('assets/soundfont.sf2');
+    super.initState();
+  }
+
+  void load(String asset) async {
+    midi.unmute();
+    final sfData = await rootBundle.load(asset);
+    midi.prepare(sf2: sfData);
+  }
+
+  void play() async {
+    final delay = 500;
+
+    final notes = [
+      voicing.soprano.midi,
+      voicing.alto.midi,
+      voicing.tenor.midi + 12,
+      voicing.bass.midi + 12
+    ];
+
+    for (final note in notes) {
+      midi.playMidiNote(midi: note);
+      await Future.delayed(Duration(milliseconds: delay));
+    }
+
+    for (final note in notes) {
+      midi.stopMidiNote(midi: note);
+    }
   }
 
   @override
@@ -77,12 +106,14 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Center(
         // Center is a layout widget. It takes a single child and positions it
         // in the middle of the parent.
-        child: MusicalNotation(),
+        child: MusicalNotation(voicing),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
+        onPressed: () {
+          play();
+        },
+        tooltip: 'Play',
+        child: Icon(Icons.speaker),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }

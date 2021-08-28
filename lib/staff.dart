@@ -4,6 +4,10 @@ import 'dart:ui' as ui;
 import './pitch.dart';
 
 class MusicalNotation extends StatefulWidget {
+  final Voicing voicing;
+
+  MusicalNotation(this.voicing);
+
   @override
   _MusicalNotationState createState() => _MusicalNotationState();
 }
@@ -47,7 +51,7 @@ class _MusicalNotationState extends State<MusicalNotation> {
       return CircularProgressIndicator();
     }
     return CustomPaint(
-      painter: StaffPainter(
+      painter: StaffPainter(widget.voicing,
           trebleClef: trebleClef!,
           bassClef: bassClef!,
           sharp: sharp!,
@@ -160,9 +164,10 @@ class StaffPainter extends CustomPainter {
     ..style = PaintingStyle.fill
     ..strokeCap = StrokeCap.round;
 
+  Voicing voicing;
   ui.Image trebleClef, bassClef, sharp, flat, wholeNote;
 
-  StaffPainter(
+  StaffPainter(this.voicing,
       {required this.trebleClef,
       required this.bassClef,
       required this.sharp,
@@ -171,18 +176,17 @@ class StaffPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final keySignature = 2;
-    final trebleStaff = Staff(150, Clef.TREBLE, keySignature);
-    final bassStaff = Staff(250, Clef.BASS, keySignature);
+    final trebleStaff = Staff(150, Clef.TREBLE, voicing.keySignature);
+    final bassStaff = Staff(250, Clef.BASS, voicing.keySignature);
 
     drawStaff(canvas, trebleStaff, size);
     drawStaff(canvas, bassStaff, size);
 
     final double x = 200;
-    drawNote(canvas, trebleStaff, x, Pitch.from('A4'));
-    drawNote(canvas, trebleStaff, x, Pitch.from('F#4'));
-    drawNote(canvas, bassStaff, x, Pitch.from('A3'));
-    drawNote(canvas, bassStaff, x, Pitch.from('D3'));
+    drawNote(canvas, trebleStaff, x, voicing.soprano);
+    drawNote(canvas, trebleStaff, x, voicing.alto);
+    drawNote(canvas, bassStaff, x, voicing.tenor);
+    drawNote(canvas, bassStaff, x, voicing.bass);
   }
 
   void drawStaff(Canvas canvas, Staff staff, Size size) {
@@ -262,5 +266,5 @@ class StaffPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(StaffPainter oldDelegate) => false;
+  bool shouldRepaint(StaffPainter old) => true; // old.voicing != voicing;
 }
